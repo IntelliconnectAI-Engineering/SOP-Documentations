@@ -1,0 +1,212 @@
+Setup OpenVPN on Centos-7 (1024 users) 
+
+Prerequisites: 
+
+OS – Centos 7 
+
+Port: 443, 943 
+
+# Installation file 
+https://intelliconnectq.sharepoint.com/:u:/s/DevOpsQ/EQAnGS4ul1NPpWh1aBdhQ40BLWp_6_Su2uw3GnDLpBeZ1g?e=Q5tdNO 
+
+ # Ovpnpy file 
+https://intelliconnectq.sharepoint.com/:u:/s/DevOpsQ/EZr5YdPTZ4ZHqXyVOOtRpDoBahcScUOJ1ZE82w3L3MBM2w?e=NpX4c7 
+
+# Ssh key 
+https://intelliconnectq.sharepoint.com/:u:/s/DevOpsQ/EZr5YdPTZ4ZHqXyVOOtRpDoBahcScUOJ1ZE82w3L3MBM2w?e=0Bx177 
+
+# Move these both file to /root  
+mv openvpn-as-2.5-CentOS7.x86_64.rpm pyovpn-2.0-py2.7.egg /root 
+
+# Navigate to /root directory. 
+cd /root 
+
+# Install OpenVPN 
+rpm -i openvpn-as-2.5-CentOS7.x86_64.rpm 
+
+# Change the directory. 
+cd /root/pyovpn-2.0-py2.7.egg /usr/local/openvpn_as/lib/python2.7/site-packages 
+
+# Delete pyovpn-2.0-py2.7.egg file 
+rm -rf pyovpn-2.0-py2.7.egg 
+
+# Then move our pyovpn to site-pacakges 
+mv /root/pyovpn-2.0-py2.7.egg /usr/local/openvpn_as/lib/python2.7/site-packages 
+
+# Go to 
+cd /usr/local/openvpn_as/bin/ 
+
+# Initialize OpenVPN 
+ovpn-init 
+
+Keep all things default 
+
+# Set password 
+passwd openvpn 
+
+Login to OpenVPN 
+https://IP-Address:943/admin 
+
+Dashboard Configuration 
+
+Navigate to Network setting 
+
+Add Hostname as Domain or IP 
+
+Navigate to VPN setting > DNS setting 
+
+And add below entries 
+
+Now we are done with Setup and configuration 
+
+Domain Setup 
+
+Install Nginx 
+
+    sudo yum update 
+
+    sudo yum install epel-release 
+
+    sudo yum install nginx 
+
+    sudo nginx -v 
+
+    sudo systemctl status nginx 
+
+    sudo systemctl start nginx 
+
+   mkdir /etc/nginx/sites-available 
+
+   mkdir /etc/nginx/sites-enabled 
+
+ Edit nginx conf file and add below line  
+
+   vi nginx.conf 
+
+# Create new conf file for OpenVPN 
+
+cd sites-available/ 
+
+    vi vpn.conf 
+
+server { 
+
+    server_name opnvpn.officevg.com; 
+
+    location / { 
+
+        proxy_pass http://127.0.0.1:943; 
+
+        proxy_set_header X-Forwarded-For $remote_addr; 
+
+        proxy_set_header Host $http_host; 
+
+        proxy_read_timeout    300s; 
+
+        proxy_send_timeout    300s; 
+
+        proxy_connect_timeout 300s; 
+
+        proxy_max_temp_file_size 1024m; 
+
+        access_log off; 
+
+        add_header X-XSS-Protection "1; mode=block"; 
+
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always; 
+
+        add_header X-Content-Type-Options nosniff; 
+
+        add_header X-Robots-Tag none; 
+
+        add_header X-Download-Options noopen; 
+
+        add_header X-Permitted-Cross-Domain-Policies none; 
+
+        add_header Content-Security-Policy "upgrade-insecure-requests; "; 
+
+        add_header Public-Key-Pins 'pin-sha256="base64+primary=="; pin-sha256="base64+backup=="; max-age=5184000; includeSubDomains' always; 
+
+        add_header Set-Cookie cip=$remote_addr; 
+
+        add_header Set-Cookie chost=$Host; 
+
+        autoindex off; 
+
+        proxy_cookie_domain ~(?P<secure_domain>([-0-9a-z]+\.)?[-0-9a-z]+\.[a-z]+)$ "$secure_domain; secure"; 
+
+        server_tokens off; 
+
+  
+
+    } 
+
+  
+
+} 
+
+ 
+
+# Create simulink 
+
+     ln -s /etc/nginx/sites-available/vpn.conf /etc/nginx/sites-enabled/vpn.conf 
+
+# Install certbot 
+
+yum install -y python-certbot-nginx 
+
+# Issue certbot certificates for domain 
+
+certbot 
+
+# Restart Nginx 
+
+Service nginx restart 
+
+# Now update certbot certificates in OpenVPN database 
+
+/usr/local/openvpn_as/scripts/sacli --key "cs.priv_key" --value_file "/etc/letsencrypt/live/opnvpn.officevg.com/privkey.pem" ConfigPut 
+
+/usr/local/openvpn_as/scripts/sacli --key "cs.cert" --value_file "/etc/letsencrypt/live/opnvpn.officevg.com/fullchain.pem" ConfigPut 
+  
+/usr/local/openvpn_as/scripts/sacli start 
+
+Now we can Access our OpenVPN server with 
+
+https://opnvpn.officevg.com/admin 
+
+Client Setup 
+
+Now Create user  
+
+Navigate to user permissions 
+
+Add username and click on more settings 
+
+Set Password for user 
+
+Save changes  
+
+Go to client server  
+
+https://Pub-IP:943 
+
+Enter username and password and click on go
+
+Select Yourself (user-locked profile) 
+ 
+Now we have client.ovpn file 
+
+Install client  now 
+
+https://openvpn.net/client/ 
+
+Open OpenVPN Connect App 
+
+Upload downloaded file  
+
+Click on Save password 
+
+Enter Password that we created for user 
+
+Done! ........ 
